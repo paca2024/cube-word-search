@@ -406,23 +406,31 @@ class CubeWordSearch {
     }
 
     updateCubeRotation() {
-        this.cube.style.transform = `rotateX(${this.rotationX}deg) rotateY(${this.rotationY}deg)`;
+        requestAnimationFrame(() => {
+            this.cube.style.transform = `rotateX(${this.rotationX}deg) rotateY(${this.rotationY}deg)`;
+        });
     }
 
     rotateCube(direction) {
+        if (!this.gameActive) return;
+        
         const step = 90;
         switch (direction) {
             case 'up':
-                this.rotationX = Math.min(this.rotationX + step, 90);
+                this.rotationX += step;
+                if (this.rotationX > 360) this.rotationX -= 360;
                 break;
             case 'down':
-                this.rotationX = Math.max(this.rotationX - step, -90);
+                this.rotationX -= step;
+                if (this.rotationX < -360) this.rotationX += 360;
                 break;
             case 'left':
                 this.rotationY -= step;
+                if (this.rotationY < -360) this.rotationY += 360;
                 break;
             case 'right':
                 this.rotationY += step;
+                if (this.rotationY > 360) this.rotationY -= 360;
                 break;
         }
         this.updateCubeRotation();
@@ -703,8 +711,28 @@ class CubeWordSearch {
     }
 
     setupEventListeners() {
-        const refreshButton = document.getElementById('refreshGame');
-        refreshButton.addEventListener('click', () => this.refreshGame());
+        // Add keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (!this.gameActive) return;
+            
+            switch(e.key) {
+                case 'ArrowUp':
+                    this.rotateCube('up');
+                    break;
+                case 'ArrowDown':
+                    this.rotateCube('down');
+                    break;
+                case 'ArrowLeft':
+                    this.rotateCube('left');
+                    break;
+                case 'ArrowRight':
+                    this.rotateCube('right');
+                    break;
+            }
+        });
+
+        // Initialize button controls
+        this.initializeControls();
     }
 }
 
