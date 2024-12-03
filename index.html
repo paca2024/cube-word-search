@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Word Search Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <div class="user-info">
+                <span id="userId"></span>
+                <span id="timer">Time: 0:00</span>
+                <span id="score">Score: 0</span>
+            </div>
+            <button id="endGame" class="end-button">End Game</button>
+        </div>
+
+        <div class="game-content">
+            <div class="cube-section">
+                <div id="currentFace" class="face-display">Face: 1</div>
+                <div class="scene">
+                    <div class="cube">
+                        <div class="face front" data-face="1">
+                            <div class="grid"></div>
+                        </div>
+                        <div class="face back" data-face="2">
+                            <div class="grid"></div>
+                        </div>
+                        <div class="face right" data-face="3">
+                            <div class="grid"></div>
+                        </div>
+                        <div class="face left" data-face="4">
+                            <div class="grid"></div>
+                        </div>
+                        <div class="face top" data-face="5">
+                            <div class="grid"></div>
+                        </div>
+                        <div class="face bottom" data-face="6">
+                            <div class="grid"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="controls">
+                    <button class="control-btn" data-direction="up">↑</button>
+                    <div class="horizontal-controls">
+                        <button class="control-btn" data-direction="left">←</button>
+                        <button class="control-btn" data-direction="right">→</button>
+                    </div>
+                    <button class="control-btn" data-direction="down">↓</button>
+                </div>
+            </div>
+
+            <div class="word-list-section">
+                <div class="word-list-container">
+                    <h2>Find These Words:</h2>
+                    <div class="word-list-scroll">
+                        <ul id="words"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Check if user is logged in
+        const userId = localStorage.getItem('currentUserId');
+        if (!userId) {
+            window.location.href = 'login.html';
+        } else {
+            document.getElementById('userId').textContent = userId;
+        }
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>

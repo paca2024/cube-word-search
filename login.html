@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Word Search - Login</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .login-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: var(--color-background);
+            color: var(--color-gold);
+        }
+
+        .login-box {
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 2rem;
+            border-radius: 10px;
+            border: 1px solid var(--color-gold);
+            text-align: center;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .login-box h1 {
+            margin-bottom: 1.5rem;
+            color: var(--color-gold);
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .input-group span {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--color-gold);
+            font-size: 1rem;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 0.8rem;
+            padding-left: 2rem;
+            border: 1px solid var(--color-gold);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: var(--color-gold);
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .login-box button {
+            width: 100%;
+            padding: 0.8rem;
+            background-color: var(--color-gold);
+            color: black;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            margin-top: 1rem;
+        }
+
+        .login-box button:hover {
+            transform: scale(1.05);
+            background-color: #ffd700;
+        }
+
+        .scores-container {
+            margin-top: 2rem;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .scores-container h2 {
+            margin-bottom: 1rem;
+            color: var(--color-gold);
+            text-align: center;
+        }
+
+        .scores-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            border: 1px solid var(--color-gold);
+        }
+
+        .scores-list li {
+            padding: 0.8rem;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .scores-list li:last-child {
+            border-bottom: none;
+        }
+
+        .scores-list .username {
+            color: var(--color-gold);
+        }
+
+        .scores-list .time {
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            <h1>3D Word Search</h1>
+            <form id="loginForm" onsubmit="return handleLogin(event)">
+                <div class="input-group">
+                    <span>@</span>
+                    <input type="text" id="userId" placeholder="username" required>
+                </div>
+                <button type="submit">Start Game</button>
+            </form>
+        </div>
+        <div class="scores-container">
+            <h2>Top Scores</h2>
+            <ul id="scoresList" class="scores-list">
+                <!-- Scores will be populated here -->
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function handleLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('userId').value.trim();
+            if (username) {
+                localStorage.setItem('currentUserId', '@' + username);
+                window.location.href = 'index.html';
+            }
+            return false;
+        }
+
+        function displayTopScores() {
+            const scores = JSON.parse(localStorage.getItem('wordSearchScores') || '[]');
+            const scoresList = document.getElementById('scoresList');
+            
+            scores.sort((a, b) => a.time - b.time);
+            const topScores = scores.slice(0, 5);
+            
+            scoresList.innerHTML = topScores.map(score => {
+                const minutes = Math.floor(score.time / 60);
+                const seconds = score.time % 60;
+                const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                return `<li>
+                    <span class="username">${score.userId}</span>
+                    <span class="time">${timeString}</span>
+                </li>`;
+            }).join('');
+
+            if (topScores.length === 0) {
+                scoresList.innerHTML = '<li><span>No scores yet</span></li>';
+            }
+        }
+
+        displayTopScores();
+    </script>
+</body>
+</html>
