@@ -711,8 +711,47 @@ class CubeWordSearch {
 class SnowAnimation {
     constructor() {
         this.snowContainer = document.querySelector('.snow-container');
+        this.snowPile = document.querySelector('.snow-pile');
         this.snowflakeCount = 50;
+        this.snowHeight = 0;
+        this.maxSnowHeight = 150; // maximum height in pixels
+        this.drifts = [];
         this.createSnowflakes();
+        this.startSnowAccumulation();
+    }
+
+    startSnowAccumulation() {
+        setInterval(() => {
+            if (this.snowHeight < this.maxSnowHeight) {
+                this.snowHeight += 10;
+                this.snowPile.style.height = `${this.snowHeight}px`;
+                this.addSnowDrift();
+            }
+        }, 60000); // Increase snow height every 60 seconds
+    }
+
+    addSnowDrift() {
+        const drift = document.createElement('div');
+        drift.className = 'snow-drift';
+        
+        // Random properties for natural look
+        const width = Math.random() * 100 + 50;
+        const height = Math.random() * 20 + 10;
+        const left = Math.random() * window.innerWidth;
+        
+        drift.style.width = `${width}px`;
+        drift.style.height = `${height}px`;
+        drift.style.left = `${left}px`;
+        drift.style.bottom = `${this.snowHeight - height/2}px`;
+        
+        this.snowPile.appendChild(drift);
+        this.drifts.push(drift);
+        
+        // Remove old drifts if there are too many
+        if (this.drifts.length > 20) {
+            const oldDrift = this.drifts.shift();
+            oldDrift.remove();
+        }
     }
 
     createSnowflakes() {
