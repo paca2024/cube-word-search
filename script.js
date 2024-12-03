@@ -714,7 +714,7 @@ class SnowAnimation {
         this.snowPile = document.querySelector('.snow-pile');
         this.snowflakeCount = 50;
         this.snowHeight = 0;
-        this.maxSnowHeight = 150; // maximum height in pixels
+        this.maxSnowHeight = 100; // reduced maximum height
         this.drifts = [];
         this.createSnowflakes();
         this.startSnowAccumulation();
@@ -723,11 +723,11 @@ class SnowAnimation {
     startSnowAccumulation() {
         setInterval(() => {
             if (this.snowHeight < this.maxSnowHeight) {
-                this.snowHeight += 10;
+                this.snowHeight += 5; // reduced increment for smoother build-up
                 this.snowPile.style.height = `${this.snowHeight}px`;
                 this.addSnowDrift();
             }
-        }, 60000); // Increase snow height every 60 seconds
+        }, 30000); // increased frequency (every 30 seconds)
     }
 
     addSnowDrift() {
@@ -735,9 +735,9 @@ class SnowAnimation {
         drift.className = 'snow-drift';
         
         // Random properties for natural look
-        const width = Math.random() * 100 + 50;
-        const height = Math.random() * 20 + 10;
-        const left = Math.random() * window.innerWidth;
+        const width = Math.random() * 150 + 100; // increased width
+        const height = Math.random() * 30 + 15; // increased height
+        const left = Math.random() * (window.innerWidth - width); // prevent overflow
         
         drift.style.width = `${width}px`;
         drift.style.height = `${height}px`;
@@ -748,7 +748,7 @@ class SnowAnimation {
         this.drifts.push(drift);
         
         // Remove old drifts if there are too many
-        if (this.drifts.length > 20) {
+        if (this.drifts.length > 15) {
             const oldDrift = this.drifts.shift();
             oldDrift.remove();
         }
