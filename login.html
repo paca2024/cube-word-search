@@ -4,173 +4,153 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Word Search - Login</title>
-    <link rel="stylesheet" href="styles.css">
     <style>
-        .login-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+        body {
+            margin: 0;
+            padding: 0;
             min-height: 100vh;
-            background-color: var(--color-background);
-            color: var(--color-gold);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
         }
 
-        .login-box {
-            background-color: rgba(0, 0, 0, 0.8);
-            padding: 2rem;
-            border-radius: 10px;
-            border: 1px solid var(--color-gold);
-            text-align: center;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
-            max-width: 400px;
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
             width: 90%;
+            max-width: 400px;
+            text-align: center;
         }
 
-        .login-box h1 {
-            margin-bottom: 1.5rem;
-            color: var(--color-gold);
+        h1 {
+            color: white;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .input-group {
-            position: relative;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
         }
 
-        .input-group span {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--color-gold);
-            font-size: 1rem;
-        }
-
-        .input-group input {
+        input {
             width: 100%;
-            padding: 0.8rem;
-            padding-left: 2rem;
-            border: 1px solid var(--color-gold);
-            background-color: rgba(0, 0, 0, 0.5);
-            color: var(--color-gold);
-            border-radius: 4px;
-            font-size: 1rem;
-        }
-
-        .login-box button {
-            width: 100%;
-            padding: 0.8rem;
-            background-color: var(--color-gold);
-            color: black;
+            padding: 12px;
             border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.2s ease;
-            margin-top: 1rem;
-        }
-
-        .login-box button:hover {
-            transform: scale(1.05);
-            background-color: #ffd700;
-        }
-
-        .scores-container {
-            margin-top: 2rem;
-            width: 90%;
-            max-width: 400px;
-        }
-
-        .scores-container h2 {
-            margin-bottom: 1rem;
-            color: var(--color-gold);
-            text-align: center;
-        }
-
-        .scores-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            background-color: rgba(0, 0, 0, 0.8);
             border-radius: 10px;
-            border: 1px solid var(--color-gold);
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 1.1rem;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+            box-sizing: border-box;
         }
 
-        .scores-list li {
-            padding: 0.8rem;
-            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.8);
         }
 
-        .scores-list li:last-child {
-            border-bottom: none;
+        input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
         }
 
-        .scores-list .username {
-            color: var(--color-gold);
+        button {
+            background: linear-gradient(45deg, #6e8efb, #a777e3);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            width: 100%;
+            margin-top: 1rem;
+            font-weight: 600;
         }
 
-        .scores-list .time {
-            color: #ccc;
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .game-title {
+            font-size: 3rem;
+            color: white;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 2rem;
+                width: 85%;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .game-title {
+                font-size: 2.5rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <div class="login-box">
-            <h1>3D Word Search</h1>
-            <form id="loginForm" onsubmit="return handleLogin(event)">
-                <div class="input-group">
-                    <span>@</span>
-                    <input type="text" id="userId" placeholder="username" required>
-                </div>
-                <button type="submit">Start Game</button>
-            </form>
+        <div class="game-title">3D Word Search</div>
+        <div class="subtitle">Enter your name to begin the challenge!</div>
+        <div class="input-group">
+            <input type="text" id="username" placeholder="Enter your name" required>
         </div>
-        <div class="scores-container">
-            <h2>Top Scores</h2>
-            <ul id="scoresList" class="scores-list">
-                <!-- Scores will be populated here -->
-            </ul>
-        </div>
+        <button onclick="startGame()">Start Game</button>
     </div>
 
     <script>
-        function handleLogin(event) {
-            event.preventDefault();
-            const username = document.getElementById('userId').value.trim();
+        function startGame() {
+            const username = document.getElementById('username').value.trim();
             if (username) {
-                localStorage.setItem('currentUserId', '@' + username);
+                localStorage.setItem('userId', username);
                 window.location.href = 'index.html';
-            }
-            return false;
-        }
-
-        function displayTopScores() {
-            const scores = JSON.parse(localStorage.getItem('wordSearchScores') || '[]');
-            const scoresList = document.getElementById('scoresList');
-            
-            scores.sort((a, b) => a.time - b.time);
-            const topScores = scores.slice(0, 5);
-            
-            scoresList.innerHTML = topScores.map(score => {
-                const minutes = Math.floor(score.time / 60);
-                const seconds = score.time % 60;
-                const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                return `<li>
-                    <span class="username">${score.userId}</span>
-                    <span class="time">${timeString}</span>
-                </li>`;
-            }).join('');
-
-            if (topScores.length === 0) {
-                scoresList.innerHTML = '<li><span>No scores yet</span></li>';
+            } else {
+                alert('Please enter your name to start the game!');
             }
         }
 
-        displayTopScores();
+        // Allow Enter key to submit
+        document.getElementById('username').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                startGame();
+            }
+        });
     </script>
 </body>
 </html>
