@@ -7,14 +7,17 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <div class="snow-container"></div>
     <div class="game-container">
-        <div class="game-header">
-            <div class="user-info">
-                <span id="userId"></span>
-                <span id="timer">Time: 0:00</span>
-                <span id="score">Score: 0</span>
+        <div class="header">
+            <div id="userId"></div>
+            <div id="score">Score: 0</div>
+            <div id="timer">Time: 0:00</div>
+            <div class="button-group">
+                <button id="refreshGame" class="action-button">New Game</button>
+                <button id="backToLogin" class="action-button" onclick="backToLogin()">Change Player</button>
+                <button id="endGame" class="action-button">End Game</button>
             </div>
-            <button id="endGame" class="end-button">End Game</button>
         </div>
 
         <div class="game-content">
@@ -64,11 +67,18 @@
     </div>
     <script>
         // Check if user is logged in
-        const userId = localStorage.getItem('currentUserId');
-        if (!userId) {
+        window.onload = function() {
+            const userId = localStorage.getItem('userId');
+            if (!userId) {
+                window.location.href = 'login.html';
+                return;
+            }
+            new WordSearchGame();
+        }
+
+        function backToLogin() {
+            localStorage.removeItem('userId');
             window.location.href = 'login.html';
-        } else {
-            document.getElementById('userId').textContent = userId;
         }
     </script>
     <script src="script.js"></script>

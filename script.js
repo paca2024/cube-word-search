@@ -12,11 +12,13 @@ class CubeWordSearch {
         this.timerInterval = null;
         this.totalWords = 0;
         this.score = 0;
+        this.timeElapsed = 0;
+        this.gameActive = true;
         this.timerElement = document.getElementById('timer');
         this.isSelecting = false;
         
         // Get user ID from localStorage
-        this.userId = localStorage.getItem('currentUserId');
+        this.userId = localStorage.getItem('userId');
         if (!this.userId) {
             window.location.href = 'login.html';
             return;
@@ -38,9 +40,7 @@ class CubeWordSearch {
         // Initialize game components
         this.initializeGame();
         this.initializeTimer();
-        this.updateCurrentFace();
-        this.updateCubeRotation();
-        this.initializeControls();
+        this.setupEventListeners();
         this.initializeEndButton();
         document.getElementById('userId').textContent = `Player: ${this.userId}`;
         document.getElementById('score').textContent = `Score: ${this.score}`;
@@ -364,7 +364,10 @@ class CubeWordSearch {
         }
 
         modal.innerHTML = message + `
-            <button onclick="location.reload()">Play Again</button>
+            <div class="button-group">
+                <button onclick="location.reload()">Play Again</button>
+                <button onclick="window.location.href='login.html'" class="secondary">Back to Login</button>
+            </div>
         `;
         
         const overlay = document.createElement('div');
@@ -677,9 +680,101 @@ class CubeWordSearch {
             });
         });
     }
+
+    refreshGame() {
+        // Clear existing game state
+        this.score = 0;
+        this.timeElapsed = 0;
+        this.foundWords = 0;
+        this.totalWords = 0;
+        this.words = [];
+        clearInterval(this.timerInterval);
+        
+        // Remove existing elements
+        const container = document.querySelector('.cube-container');
+        const wordList = document.getElementById('words');
+        if (container) container.remove();
+        if (wordList) wordList.innerHTML = '';
+        
+        // Reinitialize game
+        this.initializeGame();
+        this.initializeTimer();
+        document.getElementById('score').textContent = `Score: ${this.score}`;
+    }
+
+    setupEventListeners() {
+        const refreshButton = document.getElementById('refreshGame');
+        refreshButton.addEventListener('click', () => this.refreshGame());
+    }
 }
 
-// Initialize the game when the page loads
-window.addEventListener('load', () => {
+class SnowAnimation {
+    constructor() {
+        this.snowContainer = document.querySelector('.snow-container');
+        this.snowflakeCount = 50;
+        this.createSnowflakes();
+    }
+
+    createSnowflakes() {
+        for (let i = 0; i < this.snowflakeCount; i++) {
+            const snowflake = document.createElement('div');
+            snowflake.className = 'snowflake';
+            
+            // Random properties for natural look
+            const size = Math.random() * 5 + 2;
+            const startPositionX = Math.random() * window.innerWidth;
+            const startPositionY = Math.random() * window.innerHeight;
+            const duration = Math.random() * 3 + 2;
+            const delay = Math.random() * 2;
+            
+            // Apply styles
+            snowflake.style.width = `${size}px`;
+            snowflake.style.height = `${size}px`;
+            snowflake.style.left = `${startPositionX}px`;
+            snowflake.style.top = `${startPositionY}px`;
+            snowflake.style.animationDuration = `${duration}s`;
+            snowflake.style.animationDelay = `${delay}s`;
+            
+            this.snowContainer.appendChild(snowflake);
+            
+            // Remove and recreate snowflake when animation ends
+            snowflake.addEventListener('animationend', () => {
+                snowflake.remove();
+                this.createSingleSnowflake();
+            });
+        }
+    }
+
+    createSingleSnowflake() {
+        const snowflake = document.createElement('div');
+        snowflake.className = 'snowflake';
+        
+        const size = Math.random() * 5 + 2;
+        const startPositionX = Math.random() * window.innerWidth;
+        const duration = Math.random() * 3 + 2;
+        
+        snowflake.style.width = `${size}px`;
+        snowflake.style.height = `${size}px`;
+        snowflake.style.left = `${startPositionX}px`;
+        snowflake.style.top = '-10px';
+        snowflake.style.animationDuration = `${duration}s`;
+        
+        this.snowContainer.appendChild(snowflake);
+        
+        snowflake.addEventListener('animationend', () => {
+            snowflake.remove();
+            this.createSingleSnowflake();
+        });
+    }
+}
+
+// Initialize both game and snow animation
+window.onload = function() {
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+        window.location.href = 'login.html';
+        return;
+    }
     new CubeWordSearch();
-});
+    new SnowAnimation();
+}
