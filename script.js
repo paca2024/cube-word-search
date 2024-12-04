@@ -236,8 +236,9 @@ class CubeWordSearch {
 
     initializeSelection() {
         let selectedCells = [];
+        let foundCellsMap = new Map(); // Track found cells by their coordinates
 
-        this.faces.forEach(face => {
+        this.faces.forEach((face, faceIndex) => {
             const grid = face.querySelector('.grid');
             
             // Click selection
@@ -282,10 +283,15 @@ class CubeWordSearch {
                     });
                     
                     if (wordFound) {
-                        // Mark cells as found
+                        // Mark cells as permanently found
                         selectedCells.forEach(c => {
                             c.classList.remove('selected');
                             c.classList.add('found');
+                            
+                            // Store found cell in our map using coordinates as key
+                            const rect = c.getBoundingClientRect();
+                            const key = `${faceIndex}-${rect.left}-${rect.top}`;
+                            foundCellsMap.set(key, true);
                         });
                         
                         // Check for game completion
@@ -306,6 +312,23 @@ class CubeWordSearch {
                     cell.classList.remove('selected');
                 });
                 selectedCells = [];
+            });
+        });
+
+        // Restore found cells after cube rotation
+        this.cube.addEventListener('transitionend', () => {
+            // Re-apply found class to all previously found cells
+            foundCellsMap.forEach((value, key) => {
+                const [faceIndex, left, top] = key.split('-');
+                const face = this.faces[parseInt(faceIndex)];
+                const cells = face.querySelectorAll('.grid div');
+                cells.forEach(cell => {
+                    const rect = cell.getBoundingClientRect();
+                    if (Math.abs(rect.left - parseFloat(left)) < 1 && 
+                        Math.abs(rect.top - parseFloat(top)) < 1) {
+                        cell.classList.add('found');
+                    }
+                });
             });
         });
     }
