@@ -736,11 +736,33 @@ class CubeWordSearch {
                 case 'ArrowRight':
                     this.rotateCube('right');
                     break;
+                case 'Escape':
+                    this.clearTemporarySelections();
+                    break;
             }
         });
 
         // Initialize button controls
         this.initializeControls();
+    }
+
+    initializeTimer() {
+        this.startTime = Date.now();
+        this.timerInterval = setInterval(() => {
+            if (this.gameActive) {
+                const currentTime = Math.floor((Date.now() - this.startTime) / 1000);
+                const minutes = Math.floor(currentTime / 60);
+                const seconds = currentTime % 60;
+                this.timeElapsed = currentTime;
+                this.timerElement.textContent = `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }, 1000);
+    }
+
+    clearTemporarySelections() {
+        const selectedCells = document.querySelectorAll('.cell.selected');
+        selectedCells.forEach(cell => cell.classList.remove('selected'));
+        this.selectedCells = [];
     }
 }
 

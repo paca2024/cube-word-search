@@ -126,6 +126,9 @@ body {
     user-select: none;
     position: relative;
     z-index: 1;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 6px;
+    box-shadow: 0 2px 8px var(--shadow-color);
 }
 
 .grid div.selected {
@@ -142,6 +145,7 @@ body {
     font-weight: bold;
     box-shadow: 0 0 10px rgba(46, 204, 113, 0.4);
     z-index: 2;
+    pointer-events: none;
 }
 
 .grid div.found.selected {
@@ -159,6 +163,19 @@ body {
     background: linear-gradient(45deg, rgba(46, 204, 113, 0.2), rgba(46, 204, 113, 0.4));
     z-index: -1;
     border-radius: 4px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.6;
+    }
 }
 
 .grid div:hover {
