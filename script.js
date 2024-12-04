@@ -86,6 +86,7 @@ class CubeWordSearch {
         this.words = [];
         this.foundWords = 0;
         this.selectedCells = [];
+        this.totalWords = 0;
 
         // Initialize each face with its words
         this.faces.forEach((face, index) => {
@@ -93,18 +94,21 @@ class CubeWordSearch {
             const generatedGrid = this.generateGrid(wordsByFace[index]);
             this.createGridElements(face, generatedGrid);
             
-            // Add words to the word list
+            // Add words to the word list and track them
             const wordList = document.getElementById('words');
             wordsByFace[index].forEach(word => {
+                // Add to tracking array
+                this.words.push(word);
+                this.totalWords++;
+                
+                // Create list item
                 const li = document.createElement('li');
                 li.textContent = word;
                 li.dataset.word = word;
                 wordList.appendChild(li);
-                this.words.push(word);
             });
         });
         
-        this.totalWords = this.words.length;
         this.initializeSelection();
     }
 
@@ -238,7 +242,7 @@ class CubeWordSearch {
             
             // Click selection
             grid.addEventListener('click', (e) => {
-                if (e.target.classList.contains('grid')) return;
+                if (!this.gameActive || e.target.classList.contains('grid')) return;
                 
                 const cell = e.target;
                 
@@ -249,46 +253,53 @@ class CubeWordSearch {
                     return;
                 }
                 
-                // Add new cell to selection (even if it's part of a found word)
+                // Add new cell to selection
                 cell.classList.add('selected');
                 selectedCells.push(cell);
                 
                 // Check if we've formed a valid word
                 const word = selectedCells.map(c => c.textContent).join('');
                 const reversedWord = word.split('').reverse().join('');
+                
+                // Find the word in our list
                 const foundWord = this.words.find(w => w === word || w === reversedWord);
                 
                 if (foundWord) {
-                    // Mark word as found in the list
-                    const wordElement = document.querySelector(`#words li[data-word="${foundWord}"]`);
-                    if (wordElement && !wordElement.classList.contains('found')) {
-                        wordElement.classList.add('found');
-                        this.foundWords++;
-
-                        // Mark cells as found while preserving existing found state
+                    // Find all word elements that match (in case word appears multiple times)
+                    const wordElements = document.querySelectorAll(`#words li[data-word="${foundWord}"]`);
+                    let wordFound = false;
+                    
+                    wordElements.forEach(wordElement => {
+                        if (!wordElement.classList.contains('found')) {
+                            wordElement.classList.add('found');
+                            this.foundWords++;
+                            wordFound = true;
+                            
+                            // Update score
+                            this.score += 100;
+                            document.getElementById('score').textContent = `Score: ${this.score}`;
+                        }
+                    });
+                    
+                    if (wordFound) {
+                        // Mark cells as found
                         selectedCells.forEach(c => {
                             c.classList.remove('selected');
                             c.classList.add('found');
                         });
-
-                        // Clear selection
-                        selectedCells = [];
-
+                        
                         // Check for game completion
                         if (this.foundWords === this.totalWords) {
                             this.endGame();
                         }
-                    } else {
-                        // Word was already found, clear selection
-                        selectedCells.forEach(c => {
-                            c.classList.remove('selected');
-                        });
-                        selectedCells = [];
                     }
+                    
+                    // Clear selection
+                    selectedCells = [];
                 }
             });
 
-            // Clear button (right click)
+            // Clear selection on right click
             grid.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 selectedCells.forEach(cell => {
