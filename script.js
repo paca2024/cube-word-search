@@ -16,6 +16,7 @@ class CubeWordSearch {
         this.gameActive = true;
         this.timerElement = document.getElementById('timer');
         this.isSelecting = false;
+        this.foundCellsMap = new Map(); // Track found cells globally
         
         // Get user ID from localStorage
         this.userId = localStorage.getItem('userId');
@@ -24,19 +25,6 @@ class CubeWordSearch {
             return;
         }
 
-        // Anti-cheat properties
-        this.lastActionTime = Date.now();
-        this.actionCounts = {
-            selections: 0,
-            foundWords: 0,
-            rotations: 0
-        };
-        this.suspiciousActivity = false;
-        this.maxActionsPerSecond = 10;
-        this.maxWordsPerMinute = 20;
-        this.consecutiveFinds = 0;
-        this.lastWordFoundTime = Date.now();
-        
         // Initialize game components
         this.initializeGame();
         this.initializeTimer();
@@ -44,21 +32,106 @@ class CubeWordSearch {
         this.initializeEndButton();
         document.getElementById('userId').textContent = `Player: ${this.userId}`;
         document.getElementById('score').textContent = `Score: ${this.score}`;
-        
-        // Initialize anti-cheat monitoring
-        this.initializeAntiCheat();
     }
 
-    initializeTimer() {
-        this.timerElement = document.getElementById('timer');
-        this.startTime = Date.now();
-        this.timerInterval = setInterval(() => {
-            const currentTime = Math.floor((Date.now() - this.startTime) / 1000);
-            const minutes = Math.floor(currentTime / 60);
-            const seconds = currentTime % 60;
-            this.timerElement.textContent = `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
-            this.updateScore();
-        }, 1000);
+    markCellAsFound(cell, faceIndex) {
+        cell.classList.add('found');
+        // Create a unique identifier for this cell
+        const cellId = `${faceIndex}-${Array.from(cell.parentNode.children).indexOf(cell)}`;
+        this.foundCellsMap.set(cellId, true);
+    }
+
+    restoreFoundCells() {
+        this.faces.forEach((face, faceIndex) => {
+            const cells = face.querySelectorAll('.grid div');
+            cells.forEach((cell, cellIndex) => {
+                const cellId = `${faceIndex}-${cellIndex}`;
+                if (this.foundCellsMap.get(cellId)) {
+                    cell.classList.add('found');
+                }
+            });
+        });
+    }
+
+    initializeSelection() {
+        let selectedCells = [];
+
+        this.faces.forEach((face, faceIndex) => {
+            const grid = face.querySelector('.grid');
+            
+            // Click selection
+            grid.addEventListener('click', (e) => {
+                if (!this.gameActive || e.target.classList.contains('grid')) return;
+                
+                const cell = e.target;
+                
+                // If cell is already selected and it's the last one, remove it
+                if (selectedCells.includes(cell) && cell === selectedCells[selectedCells.length - 1]) {
+                    cell.classList.remove('selected');
+                    selectedCells.pop();
+                    return;
+                }
+                
+                // Add new cell to selection
+                cell.classList.add('selected');
+                selectedCells.push(cell);
+                
+                // Check if we've formed a valid word
+                const word = selectedCells.map(c => c.textContent).join('');
+                const reversedWord = word.split('').reverse().join('');
+                
+                // Find the word in our list
+                const foundWord = this.words.find(w => w === word || w === reversedWord);
+                
+                if (foundWord) {
+                    // Find all word elements that match
+                    const wordElements = document.querySelectorAll(`#words li[data-word="${foundWord}"]`);
+                    let wordFound = false;
+                    
+                    wordElements.forEach(wordElement => {
+                        if (!wordElement.classList.contains('found')) {
+                            wordElement.classList.add('found');
+                            this.foundWords++;
+                            wordFound = true;
+                            
+                            // Update score
+                            this.score += 100;
+                            document.getElementById('score').textContent = `Score: ${this.score}`;
+                        }
+                    });
+                    
+                    if (wordFound) {
+                        // Mark cells as permanently found
+                        selectedCells.forEach(c => {
+                            c.classList.remove('selected');
+                            this.markCellAsFound(c, faceIndex);
+                        });
+                        
+                        // Check for game completion
+                        if (this.foundWords === this.totalWords) {
+                            this.endGame();
+                        }
+                    }
+                    
+                    // Clear selection
+                    selectedCells = [];
+                }
+            });
+
+            // Clear selection on right click
+            grid.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                selectedCells.forEach(cell => {
+                    cell.classList.remove('selected');
+                });
+                selectedCells = [];
+            });
+        });
+
+        // Restore found cells after cube rotation
+        this.cube.addEventListener('transitionend', () => {
+            this.restoreFoundCells();
+        });
     }
 
     initializeGame() {
@@ -232,105 +305,6 @@ class CubeWordSearch {
             const y = startY + i * dy;
             grid[x][y] = word[i];
         }
-    }
-
-    initializeSelection() {
-        let selectedCells = [];
-        let foundCellsMap = new Map(); // Track found cells by their coordinates
-
-        this.faces.forEach((face, faceIndex) => {
-            const grid = face.querySelector('.grid');
-            
-            // Click selection
-            grid.addEventListener('click', (e) => {
-                if (!this.gameActive || e.target.classList.contains('grid')) return;
-                
-                const cell = e.target;
-                
-                // If cell is already selected and it's the last one, remove it
-                if (selectedCells.includes(cell) && cell === selectedCells[selectedCells.length - 1]) {
-                    cell.classList.remove('selected');
-                    selectedCells.pop();
-                    return;
-                }
-                
-                // Add new cell to selection
-                cell.classList.add('selected');
-                selectedCells.push(cell);
-                
-                // Check if we've formed a valid word
-                const word = selectedCells.map(c => c.textContent).join('');
-                const reversedWord = word.split('').reverse().join('');
-                
-                // Find the word in our list
-                const foundWord = this.words.find(w => w === word || w === reversedWord);
-                
-                if (foundWord) {
-                    // Find all word elements that match (in case word appears multiple times)
-                    const wordElements = document.querySelectorAll(`#words li[data-word="${foundWord}"]`);
-                    let wordFound = false;
-                    
-                    wordElements.forEach(wordElement => {
-                        if (!wordElement.classList.contains('found')) {
-                            wordElement.classList.add('found');
-                            this.foundWords++;
-                            wordFound = true;
-                            
-                            // Update score
-                            this.score += 100;
-                            document.getElementById('score').textContent = `Score: ${this.score}`;
-                        }
-                    });
-                    
-                    if (wordFound) {
-                        // Mark cells as permanently found
-                        selectedCells.forEach(c => {
-                            c.classList.remove('selected');
-                            c.classList.add('found');
-                            
-                            // Store found cell in our map using coordinates as key
-                            const rect = c.getBoundingClientRect();
-                            const key = `${faceIndex}-${rect.left}-${rect.top}`;
-                            foundCellsMap.set(key, true);
-                        });
-                        
-                        // Check for game completion
-                        if (this.foundWords === this.totalWords) {
-                            this.endGame();
-                        }
-                    }
-                    
-                    // Clear selection
-                    selectedCells = [];
-                }
-            });
-
-            // Clear selection on right click
-            grid.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                selectedCells.forEach(cell => {
-                    cell.classList.remove('selected');
-                });
-                selectedCells = [];
-            });
-        });
-
-        // Restore found cells after cube rotation
-        this.cube.addEventListener('transitionend', () => {
-            // Re-apply found class to all previously found cells
-            foundCellsMap.forEach((value, key) => {
-                const [faceIndex, left, top] = key.split('-');
-                const face = this.faces[parseInt(faceIndex)];
-                const cells = face.querySelectorAll('.grid div');
-                cells.forEach(cell => {
-                    const rect = cell.getBoundingClientRect();
-                    if (Math.abs(rect.left - parseFloat(left)) < 1 && 
-                        Math.abs(rect.top - parseFloat(top)) < 1) {
-                        cell.classList.add('found');
-                    }
-                });
-            });
-        });
     }
 
     endGame() {
