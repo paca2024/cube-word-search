@@ -242,7 +242,7 @@ class WordSearchGame {
     }
 
     startTimer() {
-        const timerElement = document.getElementById('time');
+        const timerElement = document.getElementById('timer');
         if (this.timerInterval) {
             clearInterval(this.timerInterval);
         }
@@ -448,7 +448,7 @@ class WordSearchGame {
 
         // Get final score and time
         const finalScore = this.score;
-        const finalTime = document.getElementById('time').textContent;
+        const finalTime = document.getElementById('timer').textContent;
         const playerName = document.getElementById('player-name').textContent.replace('Player: ', '');
 
         // Create game record
