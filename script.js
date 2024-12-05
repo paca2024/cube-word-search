@@ -20,6 +20,14 @@ class WordSearchGame {
         this.foundWordsPerFace = new Map();
         this.completedFaces = new Set();
         
+        // Get player name or prompt for it
+        this.playerName = localStorage.getItem('playerName');
+        if (!this.playerName) {
+            this.promptForPlayerName();
+        } else {
+            this.updatePlayerDisplay();
+        }
+        
         // Setup event listeners
         this.setupEventListeners();
         
@@ -28,6 +36,31 @@ class WordSearchGame {
         
         // Start timer
         this.startTimer();
+    }
+
+    promptForPlayerName() {
+        let name = prompt('Enter your name:', '');
+        if (name === null || name.trim() === '') {
+            name = 'Guest';
+        }
+        this.playerName = name.trim();
+        localStorage.setItem('playerName', this.playerName);
+        this.updatePlayerDisplay();
+    }
+
+    updatePlayerDisplay() {
+        document.getElementById('player-name').textContent = `Player: ${this.playerName}`;
+    }
+
+    resetPlayer() {
+        localStorage.removeItem('playerName');
+        this.promptForPlayerName();
+        this.score = 0;
+        document.getElementById('score').textContent = '0';
+        this.foundWordsPerFace = new Map();
+        this.completedFaces = new Set();
+        this.generateGrid();
+        this.updateWordList();
     }
 
     setupEventListeners() {
@@ -44,6 +77,9 @@ class WordSearchGame {
         
         // End game button listener
         document.getElementById('end-game').addEventListener('click', () => this.endGame());
+
+        // Reset player button listener
+        document.getElementById('reset-player').addEventListener('click', () => this.resetPlayer());
     }
 
     initializeGame() {
