@@ -14,7 +14,7 @@ class WordSearchGame {
             3: ['FUTURES', 'EXCHANGE', 'MARKET', 'TRADE', 'PRICE', 'BUY', 'SELL', 'ORDER', 'LIMIT'],
             4: ['DATABASE', 'CLOUD', 'BACKUP', 'SERVER', 'DISK', 'CACHE', 'FILE', 'DATA', 'SYNC', 'STORE', 'SAVE'],
             5: ['PROTOCOL', 'ROUTER', 'SWITCH', 'PACKET', 'NODE', 'PEER', 'PORT', 'HOST', 'CLIENT', 'PROXY', 'SOCKET', 'DNS', 'IP'],
-            6: ['LIQUIDITY', 'YIELD', 'STAKE', 'LOAN', 'SWAP', 'POOL', 'APY', 'FARM', 'VAULT', 'COLLATERAL', 'LENDING', 'BORROW', 'MINT', 'BURN', 'DAO']
+            6: ['LIQUIDITY', 'YIELD', 'STAKE', 'LOAN', 'SWAP', 'POOL', 'APY', 'FARM', 'VAULT', 'PACA', 'LENDING', 'BORROW', 'MINT', 'BURN', 'DAO']
         };
 
         this.foundWordsPerFace = new Map();
