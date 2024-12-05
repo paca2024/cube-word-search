@@ -1,877 +1,544 @@
-class CubeWordSearch {
+class WordSearchGame {
     constructor() {
-        this.cube = document.querySelector('.cube');
-        this.faces = Array.from(document.querySelectorAll('.face'));
-        this.rotationX = 0;
-        this.rotationY = 0;
-        this.currentFaceDisplay = document.getElementById('currentFace');
-        this.selectedCells = [];
-        this.words = [];
-        this.foundWords = 0;
-        this.startTime = null;
-        this.timerInterval = null;
-        this.totalWords = 0;
+        this.gridSize = 10;
         this.score = 0;
-        this.timeElapsed = 0;
-        this.gameActive = true;
-        this.timerElement = document.getElementById('timer');
+        this.currentFace = 1;
+        this.selectedCells = [];
+        this.currentWord = '';
         this.isSelecting = false;
-        this.foundCellsMap = new Map(); // Track found cells globally
         
-        // Get user ID from localStorage
-        this.userId = localStorage.getItem('userId');
-        if (!this.userId) {
-            window.location.href = 'login.html';
-            return;
-        }
+        // Initialize word lists for each face
+        this.wordLists = {
+            1: ['BLOCKCHAIN', 'CRYPTO', 'MINING', 'WALLET', 'TOKEN'],
+            2: ['FIREWALL', 'ENCRYPT', 'PASSWORD', 'SECURE', 'PROTECT', 'PRIVACY', 'ACCESS'],
+            3: ['FUTURES', 'EXCHANGE', 'MARKET', 'TRADE', 'PRICE', 'BUY', 'SELL', 'ORDER', 'LIMIT'],
+            4: ['DATABASE', 'CLOUD', 'BACKUP', 'SERVER', 'DISK', 'CACHE', 'FILE', 'DATA', 'SYNC', 'STORE', 'SAVE'],
+            5: ['PROTOCOL', 'ROUTER', 'SWITCH', 'PACKET', 'NODE', 'PEER', 'PORT', 'HOST', 'CLIENT', 'PROXY', 'SOCKET', 'DNS', 'IP'],
+            6: ['LIQUIDITY', 'YIELD', 'STAKE', 'LOAN', 'SWAP', 'POOL', 'APY', 'FARM', 'VAULT', 'COLLATERAL', 'LENDING', 'BORROW', 'MINT', 'BURN', 'DAO']
+        };
 
-        // Initialize game components
-        this.initializeGame();
-        this.initializeTimer();
+        this.foundWordsPerFace = new Map();
+        this.completedFaces = new Set();
+        
+        // Setup event listeners
         this.setupEventListeners();
-        this.initializeEndButton();
-        document.getElementById('userId').textContent = `Player: ${this.userId}`;
-        document.getElementById('score').textContent = `Score: ${this.score}`;
-    }
-
-    markCellAsFound(cell, faceIndex) {
-        cell.classList.add('found');
-        // Create a unique identifier for this cell
-        const cellId = `${faceIndex}-${Array.from(cell.parentNode.children).indexOf(cell)}`;
-        this.foundCellsMap.set(cellId, true);
-    }
-
-    restoreFoundCells() {
-        this.faces.forEach((face, faceIndex) => {
-            const cells = face.querySelectorAll('.grid div');
-            cells.forEach((cell, cellIndex) => {
-                const cellId = `${faceIndex}-${cellIndex}`;
-                if (this.foundCellsMap.get(cellId)) {
-                    cell.classList.add('found');
-                }
-            });
-        });
-    }
-
-    initializeSelection() {
-        let selectedCells = [];
-
-        this.faces.forEach((face, faceIndex) => {
-            const grid = face.querySelector('.grid');
-            
-            // Click selection
-            grid.addEventListener('click', (e) => {
-                if (!this.gameActive || e.target.classList.contains('grid')) return;
-                
-                const cell = e.target;
-                
-                // If cell is already selected and it's the last one, remove it
-                if (selectedCells.includes(cell) && cell === selectedCells[selectedCells.length - 1]) {
-                    cell.classList.remove('selected');
-                    selectedCells.pop();
-                    return;
-                }
-                
-                // Add new cell to selection
-                cell.classList.add('selected');
-                selectedCells.push(cell);
-                
-                // Check if we've formed a valid word
-                const word = selectedCells.map(c => c.textContent).join('');
-                const reversedWord = word.split('').reverse().join('');
-                
-                // Find the word in our list
-                const foundWord = this.words.find(w => w === word || w === reversedWord);
-                
-                if (foundWord) {
-                    // Find all word elements that match
-                    const wordElements = document.querySelectorAll(`#words li[data-word="${foundWord}"]`);
-                    let wordFound = false;
-                    
-                    wordElements.forEach(wordElement => {
-                        if (!wordElement.classList.contains('found')) {
-                            wordElement.classList.add('found');
-                            this.foundWords++;
-                            wordFound = true;
-                            
-                            // Update score
-                            this.score += 100;
-                            document.getElementById('score').textContent = `Score: ${this.score}`;
-                        }
-                    });
-                    
-                    if (wordFound) {
-                        // Mark cells as permanently found
-                        selectedCells.forEach(c => {
-                            c.classList.remove('selected');
-                            this.markCellAsFound(c, faceIndex);
-                        });
-                        
-                        // Check for game completion
-                        if (this.foundWords === this.totalWords) {
-                            this.endGame();
-                        }
-                    }
-                    
-                    // Clear selection
-                    selectedCells = [];
-                }
-            });
-
-            // Clear selection on right click
-            grid.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                selectedCells.forEach(cell => {
-                    cell.classList.remove('selected');
-                });
-                selectedCells = [];
-            });
-        });
-
-        // Restore found cells after cube rotation
-        this.cube.addEventListener('transitionend', () => {
-            this.restoreFoundCells();
-        });
-    }
-
-    initializeGame() {
-        // Define words for each face
-        const wordsByFace = [
-            // Face 1: Blockchain Basics
-            ['BLOCKCHAIN', 'BITCOIN', 'ETHEREUM', 'MINING', 'VALIDATOR', 'NETWORK', 'PROTOCOL', 'GENESIS', 'ALTCOIN', 'MEMPOOL'],
-            
-            // Face 2: DeFi & Trading
-            ['SMARTCHAIN', 'DEFI', 'STAKING', 'LENDING', 'YIELDFARM', 'LIQUIDITY', 'TRADING', 'EXCHANGE', 'LEVERAGE', 'FUTURES'],
-            
-            // Face 3: Security & Storage
-            ['COLDWALLET', 'PRIVATE', 'SECURITY', 'STORAGE', 'HARDWARE', 'DIGITAL', 'ASSETS', 'HOLDING', 'WALLET', 'KEYSTORE'],
-            
-            // Face 4: Technical Terms
-            ['CONSENSUS', 'HASHRATE', 'MERKLE', 'SIGNATURE', 'VIRTUAL', 'SCALING', 'ORACLE', 'SHARDING', 'BRIDGE', 'LAYER'],
-            
-            // Face 5: Sustainability
-            ['RENEWABLE', 'CLEAN', 'CARBON', 'CLIMATE', 'ECOSYSTEM', 'GREEN', 'ENERGY', 'EARTH', 'RECYCLE', 'NATURE'],
-            
-            // Face 6: NFT & Gaming
-            ['METAVERSE', 'GAMING', 'AVATAR', 'VIRTUAL', 'DIGITAL', 'PLAYER', 'REWARD', 'TOKEN', 'ITEM', 'CRAFT']
-        ];
-
-        this.words = [];
-        this.foundWords = 0;
-        this.selectedCells = [];
-        this.totalWords = 0;
-
-        // Initialize each face with its words
-        this.faces.forEach((face, index) => {
-            const grid = face.querySelector('.grid');
-            const generatedGrid = this.generateGrid(wordsByFace[index]);
-            this.createGridElements(face, generatedGrid);
-            
-            // Add words to the word list and track them
-            const wordList = document.getElementById('words');
-            wordsByFace[index].forEach(word => {
-                // Add to tracking array
-                this.words.push(word);
-                this.totalWords++;
-                
-                // Create list item
-                const li = document.createElement('li');
-                li.textContent = word;
-                li.dataset.word = word;
-                wordList.appendChild(li);
-            });
-        });
         
-        this.initializeSelection();
-    }
-
-    createGridElements(face, grid) {
-        const gridContainer = face.querySelector('.grid');
-        gridContainer.innerHTML = '';
-        
-        // Create the grid elements
-        for (let i = 0; i < grid.length; i++) {
-            for (let j = 0; j < grid[i].length; j++) {
-                const cell = document.createElement('div');
-                cell.textContent = grid[i][j];
-                cell.dataset.row = i;
-                cell.dataset.col = j;
-                gridContainer.appendChild(cell);
-            }
-        }
-    }
-
-    generateGrid(words) {
-        const size = 10;
-        const grid = Array(size).fill().map(() => Array(size).fill(''));
-        const directions = [
-            [0, 1],   // right
-            [1, 0],   // down
-            [1, 1],   // diagonal right-down
-            [-1, 1],  // diagonal right-up
-            [0, -1],  // left
-            [-1, 0],  // up
-            [-1, -1], // diagonal left-up
-            [1, -1]   // diagonal left-down
-        ];
-
-        // Sort words by length (longest first)
-        const sortedWords = [...words].sort((a, b) => b.length - a.length);
-
-        for (const word of sortedWords) {
-            let placed = false;
-            let attempts = 0;
-            const maxAttempts = 500;
-
-            while (!placed && attempts < maxAttempts) {
-                // Try strategic positions first for longer words
-                let startPos;
-                if (attempts < 100 && word.length > 5) {
-                    // Strategic positions for longer words
-                    const strategicPositions = [
-                        [0, 0], [0, size-1],           // top corners
-                        [size-1, 0], [size-1, size-1], // bottom corners
-                        [Math.floor(size/2), Math.floor(size/2)] // center
-                    ];
-                    startPos = strategicPositions[Math.floor(attempts / 20)];
-                } else {
-                    // Random position
-                    startPos = [
-                        Math.floor(Math.random() * size),
-                        Math.floor(Math.random() * size)
-                    ];
-                }
-
-                // Try each direction
-                const shuffledDirections = [...directions]
-                    .sort(() => Math.random() - 0.5);
-
-                for (const [dx, dy] of shuffledDirections) {
-                    if (this.canPlaceWord(grid, word, startPos[0], startPos[1], dx, dy, size)) {
-                        this.placeWord(grid, word, startPos[0], startPos[1], dx, dy);
-                        placed = true;
-                        break;
-                    }
-                }
-
-                attempts++;
-            }
-
-            if (!placed) {
-                console.error(`❌ Failed to place word: "${word}" after ${maxAttempts} attempts`);
-            }
-        }
-
-        // Fill empty spaces with random letters
-        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        for (let i = 0; i < size; i++) {
-            for (let j = 0; j < size; j++) {
-                if (grid[i][j] === '') {
-                    grid[i][j] = letters[Math.floor(Math.random() * letters.length)];
-                }
-            }
-        }
-
-        return grid;
-    }
-
-    canPlaceWord(grid, word, startX, startY, dx, dy, size) {
-        const length = word.length;
-
-        // Check if word fits within grid bounds
-        const endX = startX + (length - 1) * dx;
-        const endY = startY + (length - 1) * dy;
-        if (endX < 0 || endX >= size || endY < 0 || endY >= size) {
-            return false;
-        }
-
-        // Check if path is clear
-        for (let i = 0; i < length; i++) {
-            const x = startX + i * dx;
-            const y = startY + i * dy;
-            const currentCell = grid[x][y];
-            
-            if (currentCell !== '' && currentCell !== word[i]) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    placeWord(grid, word, startX, startY, dx, dy) {
-        for (let i = 0; i < word.length; i++) {
-            const x = startX + i * dx;
-            const y = startY + i * dy;
-            grid[x][y] = word[i];
-        }
-    }
-
-    endGame() {
-        clearInterval(this.timerInterval);
-        
-        // Calculate final score based on words found
-        const finalScore = this.foundWords === 0 ? 0 : this.score;
-        const timeBonus = this.foundWords === 0 ? 0 : Math.max(0, Math.floor((300 - this.timeElapsed) * 2));
-        const totalScore = finalScore + timeBonus;
-
-        // Create game history entry
-        const gameEntry = {
-            userId: this.userId,
-            timestamp: new Date().toISOString(),
-            score: totalScore,
-            wordsFound: this.foundWords,
-            totalWords: this.totalWords,
-            timeElapsed: this.timeElapsed
-        };
-
-        // Save to localStorage
-        const gameHistory = JSON.parse(localStorage.getItem('gameHistory') || '[]');
-        gameHistory.push(gameEntry);
-        localStorage.setItem('gameHistory', JSON.stringify(gameHistory));
-
-        // Create and show modal
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        
-        let message = '';
-        if (this.foundWords === 0) {
-            message = `
-                <h2>Game Over!</h2>
-                <p>😔 No words found!</p>
-                <p>Keep trying - you can do better!</p>
-                <div class="stats">
-                    <div>Words Found: 0/${this.totalWords}</div>
-                    <div>Base Score: 0</div>
-                    <div>Time Bonus: 0</div>
-                    <div>Total Score: 0</div>
-                </div>
-            `;
-        } else if (this.foundWords === this.totalWords) {
-            message = `
-                <h2>🎉 Congratulations!</h2>
-                <p>You found all the words!</p>
-                <div class="stats">
-                    <div>Words Found: ${this.foundWords}/${this.totalWords}</div>
-                    <div>Base Score: ${finalScore}</div>
-                    <div>Time Bonus: ${timeBonus}</div>
-                    <div>Total Score: ${totalScore}</div>
-                </div>
-            `;
-        } else {
-            message = `
-                <h2>Game Over!</h2>
-                <p>Good effort! You found ${this.foundWords} out of ${this.totalWords} words.</p>
-                <div class="stats">
-                    <div>Words Found: ${this.foundWords}/${this.totalWords}</div>
-                    <div>Base Score: ${finalScore}</div>
-                    <div>Time Bonus: ${timeBonus}</div>
-                    <div>Total Score: ${totalScore}</div>
-                </div>
-            `;
-        }
-
-        modal.innerHTML = message + `
-            <div class="button-group">
-                <button onclick="location.reload()">Play Again</button>
-                <button onclick="window.location.href='login.html'" class="secondary">Back to Login</button>
-            </div>
-        `;
-        
-        const overlay = document.createElement('div');
-        overlay.className = 'overlay';
-        
-        document.body.appendChild(overlay);
-        document.body.appendChild(modal);
-    }
-
-    updateScore() {
-        // Calculate score based on time taken and words found
-        const timeInSeconds = Math.floor((Date.now() - this.startTime) / 1000);
-        const baseScore = this.foundWords * 100; // 100 points per word
-        const timeBonus = Math.max(0, 1000 - timeInSeconds); // Time bonus decreases as time increases
-        this.score = baseScore + timeBonus;
-        document.getElementById('score').textContent = `Score: ${this.score}`;
-    }
-
-    updateCurrentFace() {
-        const x = ((this.rotationX % 360 + 360) % 360) / 90;
-        const y = ((this.rotationY % 360 + 360) % 360) / 90;
-        
-        let currentFace;
-        if (x === 0) {
-            if (y === 0) currentFace = 1;      // front
-            else if (y === 1) currentFace = 3;  // right
-            else if (y === 2) currentFace = 2;  // back
-            else currentFace = 4;               // left
-        } else if (x === 1) {
-            currentFace = 5;  // top
-        } else if (x === 3) {
-            currentFace = 6;  // bottom
-        }
-        
-        this.currentFaceDisplay.textContent = currentFace;
-    }
-
-    updateCubeRotation() {
-        requestAnimationFrame(() => {
-            this.cube.style.transform = `rotateX(${this.rotationX}deg) rotateY(${this.rotationY}deg)`;
-        });
-    }
-
-    rotateCube(direction) {
-        if (!this.gameActive) return;
-        
-        const step = 90;
-        switch (direction) {
-            case 'up':
-                this.rotationX += step;
-                if (this.rotationX > 360) this.rotationX -= 360;
-                break;
-            case 'down':
-                this.rotationX -= step;
-                if (this.rotationX < -360) this.rotationX += 360;
-                break;
-            case 'left':
-                this.rotationY -= step;
-                if (this.rotationY < -360) this.rotationY += 360;
-                break;
-            case 'right':
-                this.rotationY += step;
-                if (this.rotationY > 360) this.rotationY -= 360;
-                break;
-        }
-        this.updateCubeRotation();
-        this.updateCurrentFace();
-    }
-
-    initializeControls() {
-        const controls = document.querySelectorAll('.control-btn');
-        controls.forEach(control => {
-            control.addEventListener('click', () => {
-                if (this.isSelecting) return;
-                
-                const direction = control.dataset.direction;
-                this.rotateCube(direction);
-                
-                // Add click animation
-                control.classList.add('clicked');
-                setTimeout(() => {
-                    control.classList.remove('clicked');
-                }, 200);
-            });
-        });
-    }
-
-    initializeEndButton() {
-        const endButton = document.getElementById('endGame');
-        endButton.addEventListener('click', () => this.endGame());
-    }
-
-    initializeAntiCheat() {
-        // Monitor console opening
-        let devtoolsOpen = false;
-        const timeThreshold = 100;
-        const threshold = 160;
-        const handler = {
-            get: function(target, name) {
-                if (name === 'toString') {
-                    devtoolsOpen = true;
-                    return function() {
-                        return '[native code]';
-                    };
-                }
-                return target[name];
-            }
-        };
-        
-        const check = new Proxy(handler, handler);
-        setInterval(() => {
-            const start = performance.now();
-            debugger;
-            const end = performance.now();
-            
-            if (end - start > threshold || devtoolsOpen) {
-                this.handleCheating('DevTools detected');
-            }
-        }, timeThreshold);
-
-        // Prevent source code viewing
-        document.addEventListener('contextmenu', e => e.preventDefault());
-        document.addEventListener('keydown', e => {
-            if ((e.ctrlKey && (e.key === 'u' || e.key === 's')) || 
-                (e.key === 'F12') || 
-                (e.ctrlKey && e.shiftKey && e.key === 'i')) {
-                e.preventDefault();
-                this.handleCheating('Attempted to view source code');
-            }
-        });
-
-        // Monitor localStorage tampering
-        const originalSetItem = localStorage.setItem;
-        localStorage.setItem = (...args) => {
-            if (args[0].includes('gameHistory')) {
-                const data = JSON.parse(args[1]);
-                if (this.isScoreSuspicious(data)) {
-                    this.handleCheating('Suspicious score detected');
-                    return;
-                }
-            }
-            originalSetItem.apply(localStorage, args);
-        };
-    }
-
-    isScoreSuspicious(data) {
-        if (!Array.isArray(data)) return true;
-        
-        const lastEntry = data[data.length - 1];
-        if (!lastEntry) return false;
-
-        // Check for impossibly high scores
-        if (lastEntry.score > this.totalWords * 1100) return true;
-
-        // Check for impossible completion times
-        const minTimePerWord = 1000; // 1 second minimum per word
-        const gameTime = new Date(lastEntry.timestamp) - this.startTime;
-        if (gameTime < lastEntry.wordsFound * minTimePerWord) return true;
-
-        return false;
-    }
-
-    handleCheating(reason) {
-        if (this.suspiciousActivity) return; // Only handle once
-        
-        this.suspiciousActivity = true;
-        console.warn('Suspicious activity detected:', reason);
-        
-        // Save cheating attempt to localStorage
-        const cheatingAttempts = JSON.parse(localStorage.getItem('cheatingAttempts') || '[]');
-        cheatingAttempts.push({
-            userId: this.userId,
-            timestamp: new Date().toISOString(),
-            reason: reason
-        });
-        localStorage.setItem('cheatingAttempts', JSON.stringify(cheatingAttempts));
-
-        // Clear game progress
-        this.score = 0;
-        this.foundWords = 0;
-        clearInterval(this.timerInterval);
-        
-        // Show warning modal
-        const modal = document.createElement('div');
-        modal.className = 'modal warning';
-        modal.innerHTML = `
-            <h2>⚠️ Warning</h2>
-            <p>Suspicious activity detected. Your game has been reset.</p>
-            <p>Fair play makes the game more enjoyable for everyone!</p>
-        `;
-        
-        const overlay = document.createElement('div');
-        overlay.className = 'overlay';
-        
-        document.body.appendChild(overlay);
-        document.body.appendChild(modal);
-        
-        // Reload after 3 seconds
-        setTimeout(() => location.reload(), 3000);
-    }
-
-    checkActionRate() {
-        const now = Date.now();
-        const timeDiff = now - this.lastActionTime;
-        
-        this.actionCounts.selections++;
-        
-        // Check for rapid actions
-        if (timeDiff < 1000 && this.actionCounts.selections > this.maxActionsPerSecond) {
-            this.handleCheating('Too many actions per second');
-            return false;
-        }
-        
-        // Reset counters every second
-        if (timeDiff > 1000) {
-            this.actionCounts.selections = 0;
-            this.lastActionTime = now;
-        }
-        
-        return true;
-    }
-
-    checkWordFindRate() {
-        const now = Date.now();
-        const timeSinceLastWord = now - this.lastWordFoundTime;
-        
-        // Check for consecutive quick finds
-        if (timeSinceLastWord < 500) {
-            this.consecutiveFinds++;
-            if (this.consecutiveFinds > 3) {
-                this.handleCheating('Words found too quickly');
-                return false;
-            }
-        } else {
-            this.consecutiveFinds = 0;
-        }
-        
-        // Check words per minute
-        const gameTime = (now - this.startTime) / 1000 / 60; // in minutes
-        if (gameTime > 0 && (this.foundWords / gameTime) > this.maxWordsPerMinute) {
-            this.handleCheating('Too many words found per minute');
-            return false;
-        }
-        
-        this.lastWordFoundTime = now;
-        return true;
-    }
-
-    checkSelectedWord() {
-        if (!this.checkActionRate()) return;
-        
-        let selectedCells = [];
-
-        this.faces.forEach(face => {
-            const grid = face.querySelector('.grid');
-            
-            // Click selection
-            grid.addEventListener('click', (e) => {
-                if (e.target.classList.contains('grid')) return;
-                
-                const cell = e.target;
-                
-                // If cell is already selected and it's the last one, remove it
-                if (selectedCells.includes(cell) && cell === selectedCells[selectedCells.length - 1]) {
-                    cell.classList.remove('selected');
-                    selectedCells.pop();
-                    return;
-                }
-                
-                // Add new cell to selection (even if it's part of a found word)
-                cell.classList.add('selected');
-                selectedCells.push(cell);
-                
-                // Check if we've formed a valid word
-                const word = selectedCells.map(c => c.textContent).join('');
-                const reversedWord = word.split('').reverse().join('');
-                const foundWord = this.words.find(w => w === word || w === reversedWord);
-                
-                if (foundWord) {
-                    if (!this.checkWordFindRate()) return;
-                    
-                    // Mark word as found in the list
-                    const wordElement = document.querySelector(`#words li[data-word="${foundWord}"]`);
-                    if (wordElement && !wordElement.classList.contains('found')) {
-                        wordElement.classList.add('found');
-                        this.foundWords++;
-
-                        // Mark cells as found while preserving existing found state
-                        selectedCells.forEach(c => {
-                            c.classList.remove('selected');
-                            c.classList.add('found');
-                        });
-
-                        // Clear selection
-                        selectedCells = [];
-
-                        // Check for game completion
-                        if (this.foundWords === this.totalWords) {
-                            this.endGame();
-                        }
-                    } else {
-                        // Word was already found, clear selection
-                        selectedCells.forEach(c => {
-                            c.classList.remove('selected');
-                        });
-                        selectedCells = [];
-                    }
-                }
-            });
-
-            // Clear button (right click)
-            grid.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                selectedCells.forEach(cell => {
-                    cell.classList.remove('selected');
-                });
-                selectedCells = [];
-            });
-        });
-    }
-
-    refreshGame() {
-        // Clear existing game state
-        this.score = 0;
-        this.timeElapsed = 0;
-        this.foundWords = 0;
-        this.totalWords = 0;
-        this.words = [];
-        clearInterval(this.timerInterval);
-        
-        // Remove existing elements
-        const container = document.querySelector('.cube-container');
-        const wordList = document.getElementById('words');
-        if (container) container.remove();
-        if (wordList) wordList.innerHTML = '';
-        
-        // Reinitialize game
+        // Initialize game
         this.initializeGame();
-        this.initializeTimer();
-        document.getElementById('score').textContent = `Score: ${this.score}`;
+        
+        // Start timer
+        this.startTimer();
     }
 
     setupEventListeners() {
-        // Add keyboard controls
-        document.addEventListener('keydown', (e) => {
-            if (!this.gameActive) return;
-            
-            switch(e.key) {
-                case 'ArrowUp':
-                    this.rotateCube('up');
-                    break;
-                case 'ArrowDown':
-                    this.rotateCube('down');
-                    break;
-                case 'ArrowLeft':
-                    this.rotateCube('left');
-                    break;
-                case 'ArrowRight':
-                    this.rotateCube('right');
-                    break;
-                case 'Escape':
-                    this.clearTemporarySelections();
-                    break;
-            }
+        // Face button listeners
+        document.querySelectorAll('.face-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const face = parseInt(button.dataset.face);
+                this.changeFace(face);
+            });
         });
 
-        // Initialize button controls
-        this.initializeControls();
+        // Grid cell selection listeners
+        document.addEventListener('mouseup', () => this.handleMouseUp());
+        
+        // End game button listener
+        document.getElementById('end-game').addEventListener('click', () => this.endGame());
     }
 
-    initializeTimer() {
-        this.startTime = Date.now();
-        this.timerInterval = setInterval(() => {
-            if (this.gameActive) {
-                const currentTime = Math.floor((Date.now() - this.startTime) / 1000);
-                const minutes = Math.floor(currentTime / 60);
-                const seconds = currentTime % 60;
-                this.timeElapsed = currentTime;
-                this.timerElement.textContent = `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+    initializeGame() {
+        this.score = 0;
+        document.getElementById('score').textContent = '0';
+        document.getElementById('current-face').textContent = `Face ${this.currentFace}`;
+        
+        // Clear any existing game state
+        this.foundWordsPerFace = new Map();
+        this.completedFaces = new Set();
+        this.selectedCells = [];
+        this.currentWord = '';
+        
+        // Generate initial grid and word list
+        this.generateGrid();
+        this.updateWordList();
+    }
+
+    generateGrid() {
+        const grid = document.getElementById('letter-grid');
+        grid.innerHTML = ''; // Clear existing grid
+        
+        // Create 10x10 grid array
+        this.grid = Array(this.gridSize).fill().map(() => Array(this.gridSize).fill(''));
+        
+        // Get current face's words
+        const words = this.wordLists[this.currentFace];
+        
+        // Place words in grid
+        words.forEach(word => {
+            let placed = false;
+            let attempts = 0;
+            while (!placed && attempts < 100) {
+                const direction = Math.floor(Math.random() * 8);
+                const row = Math.floor(Math.random() * this.gridSize);
+                const col = Math.floor(Math.random() * this.gridSize);
+                
+                if (this.canPlaceWord(word, row, col, direction)) {
+                    this.placeWord(word, row, col, direction);
+                    placed = true;
+                }
+                attempts++;
             }
+        });
+        
+        // Fill remaining cells with random letters
+        for (let i = 0; i < this.gridSize; i++) {
+            for (let j = 0; j < this.gridSize; j++) {
+                if (!this.grid[i][j]) {
+                    this.grid[i][j] = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+                }
+            }
+        }
+        
+        // Create grid cells in DOM
+        for (let i = 0; i < this.gridSize; i++) {
+            for (let j = 0; j < this.gridSize; j++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                cell.textContent = this.grid[i][j];
+                cell.dataset.row = i;
+                cell.dataset.col = j;
+                
+                // Add mouse event listeners
+                cell.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+                cell.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                
+                grid.appendChild(cell);
+            }
+        }
+        
+        // Mark previously found words
+        this.markFoundWords();
+    }
+
+    updateWordList() {
+        const wordList = document.getElementById('word-list');
+        wordList.innerHTML = ''; // Clear existing list
+        
+        const currentWords = this.wordLists[this.currentFace];
+        const foundWords = this.foundWordsPerFace.get(this.currentFace) || new Set();
+        
+        currentWords.forEach(word => {
+            const wordElement = document.createElement('div');
+            wordElement.textContent = word;
+            if (foundWords.has(word)) {
+                wordElement.classList.add('found');
+            }
+            wordList.appendChild(wordElement);
+        });
+    }
+
+    markFoundWords() {
+        if (!this.foundWordsPerFace.has(this.currentFace)) {
+            return;
+        }
+
+        const foundWords = this.foundWordsPerFace.get(this.currentFace);
+        const gridCells = document.getElementsByClassName('grid-cell');
+
+        // For each found word
+        foundWords.forEach(word => {
+            // For each cell in the grid
+            for (let i = 0; i < this.gridSize; i++) {
+                for (let j = 0; j < this.gridSize; j++) {
+                    // Check if this cell starts a found word
+                    if (this.doesWordStartAtCell(i, j, word)) {
+                        this.markWordCells(i, j, word);
+                    }
+                }
+            }
+        });
+    }
+
+    doesWordStartAtCell(row, col, word) {
+        const directions = [
+            [0, 1],   // right
+            [1, 0],   // down
+            [1, 1],   // diagonal down-right
+            [-1, 1],  // diagonal up-right
+            [0, -1],  // left
+            [-1, 0],  // up
+            [-1, -1], // diagonal up-left
+            [1, -1]   // diagonal down-left
+        ];
+
+        for (let [dx, dy] of directions) {
+            let matches = true;
+            for (let i = 0; i < word.length; i++) {
+                const newRow = row + (dx * i);
+                const newCol = col + (dy * i);
+                
+                if (newRow < 0 || newRow >= this.gridSize || 
+                    newCol < 0 || newCol >= this.gridSize || 
+                    this.grid[newRow][newCol] !== word[i]) {
+                    matches = false;
+                    break;
+                }
+            }
+            if (matches) {
+                return [dx, dy]; // Return direction if word is found
+            }
+        }
+        return false;
+    }
+
+    markWordCells(startRow, startCol, word) {
+        const direction = this.doesWordStartAtCell(startRow, startCol, word);
+        if (!direction) return;
+
+        const [dx, dy] = direction;
+        const cells = document.getElementsByClassName('grid-cell');
+
+        for (let i = 0; i < word.length; i++) {
+            const row = startRow + (dx * i);
+            const col = startCol + (dy * i);
+            const index = row * this.gridSize + col;
+            cells[index].classList.add('found');
+        }
+    }
+
+    startTimer() {
+        const timerElement = document.getElementById('time');
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+        }
+        this.startTime = new Date();
+        
+        this.timerInterval = setInterval(() => {
+            const currentTime = new Date();
+            const timeDiff = Math.floor((currentTime - this.startTime) / 1000);
+            const minutes = Math.floor(timeDiff / 60);
+            const seconds = timeDiff % 60;
+            timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }, 1000);
     }
 
-    clearTemporarySelections() {
-        const selectedCells = document.querySelectorAll('.cell.selected');
-        selectedCells.forEach(cell => cell.classList.remove('selected'));
-        this.selectedCells = [];
-    }
-}
+    canPlaceWord(word, row, col, direction) {
+        const dirs = [
+            [0, 1],   // right
+            [1, 0],   // down
+            [1, 1],   // diagonal down-right
+            [-1, 1],  // diagonal up-right
+            [0, -1],  // left
+            [-1, 0],  // up
+            [-1, -1], // diagonal up-left
+            [1, -1]   // diagonal down-left
+        ];
 
-class SnowAnimation {
-    constructor() {
-        this.snowContainer = document.querySelector('.snow-container');
-        this.snowPile = document.querySelector('.snow-pile');
-        this.snowflakeCount = 50;
-        this.snowHeight = 0;
-        this.maxSnowHeight = 100; // reduced maximum height
-        this.drifts = [];
-        this.createSnowflakes();
-        this.startSnowAccumulation();
-    }
+        const [dRow, dCol] = dirs[direction];
+        const len = word.length;
 
-    startSnowAccumulation() {
-        setInterval(() => {
-            if (this.snowHeight < this.maxSnowHeight) {
-                this.snowHeight += 5; // reduced increment for smoother build-up
-                this.snowPile.style.height = `${this.snowHeight}px`;
-                this.addSnowDrift();
+        // Check if word fits on grid
+        for (let i = 0; i < len; i++) {
+            const newRow = row + (dRow * i);
+            const newCol = col + (dCol * i);
+
+            if (newRow < 0 || newRow >= 10 || 
+                newCol < 0 || newCol >= 10) {
+                return false;
             }
-        }, 30000); // increased frequency (every 30 seconds)
+
+            // Check if cell is empty or has matching letter
+            if (this.grid[newRow][newCol] !== '' && 
+                this.grid[newRow][newCol] !== word[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
-    addSnowDrift() {
-        const drift = document.createElement('div');
-        drift.className = 'snow-drift';
+    placeWord(word, row, col, direction) {
+        const dirs = [
+            [0, 1],   // right
+            [1, 0],   // down
+            [1, 1],   // diagonal down-right
+            [-1, 1],  // diagonal up-right
+            [0, -1],  // left
+            [-1, 0],  // up
+            [-1, -1], // diagonal up-left
+            [1, -1]   // diagonal down-left
+        ];
+
+        const [dRow, dCol] = dirs[direction];
         
-        // Random properties for natural look
-        const width = Math.random() * 150 + 100; // increased width
-        const height = Math.random() * 30 + 15; // increased height
-        const left = Math.random() * (window.innerWidth - width); // prevent overflow
-        
-        drift.style.width = `${width}px`;
-        drift.style.height = `${height}px`;
-        drift.style.left = `${left}px`;
-        drift.style.bottom = `${this.snowHeight - height/2}px`;
-        
-        this.snowPile.appendChild(drift);
-        this.drifts.push(drift);
-        
-        // Remove old drifts if there are too many
-        if (this.drifts.length > 15) {
-            const oldDrift = this.drifts.shift();
-            oldDrift.remove();
+        for (let i = 0; i < word.length; i++) {
+            const newRow = row + (dRow * i);
+            const newCol = col + (dCol * i);
+            this.grid[newRow][newCol] = word[i];
         }
     }
 
-    createSnowflakes() {
-        for (let i = 0; i < this.snowflakeCount; i++) {
-            const snowflake = document.createElement('div');
-            snowflake.className = 'snowflake';
-            
-            // Random properties for natural look
-            const size = Math.random() * 5 + 2;
-            const startPositionX = Math.random() * window.innerWidth;
-            const startPositionY = Math.random() * window.innerHeight;
-            const duration = Math.random() * 3 + 2;
-            const delay = Math.random() * 2;
-            
-            // Apply styles
-            snowflake.style.width = `${size}px`;
-            snowflake.style.height = `${size}px`;
-            snowflake.style.left = `${startPositionX}px`;
-            snowflake.style.top = `${startPositionY}px`;
-            snowflake.style.animationDuration = `${duration}s`;
-            snowflake.style.animationDelay = `${delay}s`;
-            
-            this.snowContainer.appendChild(snowflake);
-            
-            // Remove and recreate snowflake when animation ends
-            snowflake.addEventListener('animationend', () => {
-                snowflake.remove();
-                this.createSingleSnowflake();
-            });
+    handleMouseDown(e) {
+        if (e.target.classList.contains('grid-cell')) {
+            this.isSelecting = true;
+            this.currentWord = e.target.textContent;
+            this.selectedCells = [e.target];
+            e.target.classList.add('selected');
         }
     }
-
-    createSingleSnowflake() {
-        const snowflake = document.createElement('div');
-        snowflake.className = 'snowflake';
+    
+    handleMouseMove(e) {
+        if (this.isSelecting && e.target.classList.contains('grid-cell')) {
+            if (this.selectedCells.length && !this.selectedCells.includes(e.target)) {
+                this.selectedCells.push(e.target);
+                this.currentWord += e.target.textContent;
+                e.target.classList.add('selected');
+            }
+        }
+    }
+    
+    handleMouseUp() {
+        if (this.isSelecting) {
+            this.isSelecting = false;
+            
+            // Get the selected word
+            const normalizedWord = this.currentWord.toUpperCase();
+            const reversedWord = this.currentWord.split('').reverse().join('');
+            
+            // Check if word exists in current face's word list
+            const currentWords = this.wordLists[this.currentFace];
+            if (currentWords.includes(normalizedWord)) {
+                this.wordFound(normalizedWord);
+            } else if (currentWords.includes(reversedWord)) {
+                this.wordFound(reversedWord);
+            }
+            
+            // Clear selection
+            this.selectedCells.forEach(cell => cell.classList.remove('selected'));
+            this.selectedCells = [];
+            this.currentWord = '';
+        }
+    }
+    
+    wordFound(word) {
+        // Initialize set for current face if it doesn't exist
+        if (!this.foundWordsPerFace.has(this.currentFace)) {
+            this.foundWordsPerFace.set(this.currentFace, new Set());
+        }
         
-        const size = Math.random() * 5 + 2;
-        const startPositionX = Math.random() * window.innerWidth;
-        const duration = Math.random() * 3 + 2;
+        // Add word to found words
+        this.foundWordsPerFace.get(this.currentFace).add(word);
         
-        snowflake.style.width = `${size}px`;
-        snowflake.style.height = `${size}px`;
-        snowflake.style.left = `${startPositionX}px`;
-        snowflake.style.top = '-10px';
-        snowflake.style.animationDuration = `${duration}s`;
+        // Update score
+        this.updateScore(this.score + 10);
         
-        this.snowContainer.appendChild(snowflake);
-        
-        snowflake.addEventListener('animationend', () => {
-            snowflake.remove();
-            this.createSingleSnowflake();
+        // Mark cells as found
+        this.selectedCells.forEach(cell => {
+            cell.classList.remove('selected');
+            cell.classList.add('found');
         });
+        
+        // Mark word as found in word list
+        const wordList = document.getElementById('word-list');
+        const wordElements = wordList.children;
+        for (let element of wordElements) {
+            if (element.textContent === word) {
+                element.classList.add('found');
+                break;
+            }
+        }
+        
+        // Check if face is completed
+        this.checkFaceCompletion();
+    }
+
+    checkFaceCompletion() {
+        const currentWords = this.wordLists[this.currentFace];
+        const foundWords = this.foundWordsPerFace.get(this.currentFace) || new Set();
+        
+        if (foundWords.size === currentWords.length) {
+            this.completedFaces.add(this.currentFace);
+            this.updateFaceButtons();
+            
+            // Check if all faces are completed
+            if (this.completedFaces.size === 6) {
+                setTimeout(() => {
+                    alert('Congratulations! You have completed all faces!');
+                    this.endGame();
+                }, 500);
+            }
+        }
+    }
+
+    changeFace(faceNumber) {
+        if (faceNumber >= 1 && faceNumber <= 6) {
+            this.currentFace = faceNumber;
+            document.getElementById('current-face').textContent = `Face ${this.currentFace}`;
+            
+            // Update face buttons
+            document.querySelectorAll('.face-btn').forEach(btn => {
+                const face = parseInt(btn.dataset.face);
+                btn.classList.toggle('active', face === this.currentFace);
+                if (this.completedFaces.has(face)) {
+                    btn.classList.add('completed');
+                }
+            });
+            
+            // Generate new grid
+            this.generateGrid();
+            
+            // Update word list
+            this.updateWordList();
+        }
+    }
+
+    updateScore(newScore) {
+        this.score = newScore;
+        document.getElementById('score').textContent = this.score;
+    }
+    
+    updateTimer() {
+        const now = new Date();
+        const diff = Math.floor((now - this.startTime) / 1000);
+        const minutes = Math.floor(diff / 60);
+        const seconds = diff % 60;
+        this.timeElement.textContent = 
+            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    endGame() {
+        // Stop the timer
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+        }
+
+        // Get final score and time
+        const finalScore = this.score;
+        const finalTime = document.getElementById('time').textContent;
+        const playerName = document.getElementById('player-name').textContent.replace('Player: ', '');
+
+        // Create game record
+        const gameRecord = {
+            playerId: playerName,
+            score: finalScore,
+            time: finalTime,
+            timestamp: new Date().toISOString()
+        };
+
+        // Get existing records from localStorage
+        let gameRecords = JSON.parse(localStorage.getItem('gameRecords') || '[]');
+        
+        // Add new record
+        gameRecords.push(gameRecord);
+        
+        // Sort by score (highest first) and time (shortest first)
+        gameRecords.sort((a, b) => {
+            if (b.score !== a.score) {
+                return b.score - a.score;
+            }
+            return a.time.localeCompare(b.time);
+        });
+
+        // Keep only top 10 scores
+        gameRecords = gameRecords.slice(0, 10);
+        
+        // Save back to localStorage
+        localStorage.setItem('gameRecords', JSON.stringify(gameRecords));
+
+        // Show end game message with stats
+        alert(`Game Over!\n\nPlayer: ${playerName}\nFinal Score: ${finalScore}\nTime: ${finalTime}\n\nYour score has been recorded.`);
+
+        // Reset the game
+        this.initializeGame();
+    }
+
+}
+
+function createSnowflakes() {
+    const snowContainer = document.querySelector('.snow-container');
+    const snowflakeCount = 50;
+
+    for (let i = 0; i < snowflakeCount; i++) {
+        createSnowflake(snowContainer);
     }
 }
 
-// Initialize both game and snow animation
-window.onload = function() {
-    const userId = localStorage.getItem('userId');
-    if (!userId) {
-        window.location.href = 'login.html';
-        return;
-    }
-    new CubeWordSearch();
-    new SnowAnimation();
+function createSnowflake(container) {
+    const snowflake = document.createElement('div');
+    snowflake.className = 'snowflake';
+    
+    // Random properties for each snowflake
+    const size = Math.random() * 5 + 2;
+    const startingLeft = Math.random() * 100;
+    const animationDuration = Math.random() * 3 + 2;
+    const delay = Math.random() * 2;
+    
+    snowflake.style.width = `${size}px`;
+    snowflake.style.height = `${size}px`;
+    snowflake.style.left = `${startingLeft}%`;
+    snowflake.style.animationDuration = `${animationDuration}s`;
+    snowflake.style.animationDelay = `${delay}s`;
+    
+    // Add animation end listener to create snow piles and new snowflakes
+    snowflake.addEventListener('animationend', () => {
+        createSnowPile(startingLeft);
+        container.removeChild(snowflake);
+        createSnowflake(container);
+    });
+    
+    container.appendChild(snowflake);
 }
+
+function createSnowPile(xPosition) {
+    const snowGround = document.querySelector('.snow-ground');
+    const pile = document.createElement('div');
+    pile.className = 'snow-pile';
+    
+    // Random properties for snow pile
+    const size = Math.random() * 15 + 10;
+    const offsetX = (Math.random() - 0.5) * 20;
+    
+    pile.style.width = `${size}px`;
+    pile.style.height = `${size}px`;
+    pile.style.left = `calc(${xPosition}% + ${offsetX}px)`;
+    pile.style.bottom = '0';
+    
+    // Remove pile after animation
+    pile.addEventListener('animationend', () => {
+        setTimeout(() => {
+            if (pile.parentNode === snowGround) {
+                snowGround.removeChild(pile);
+            }
+        }, 5000);
+    });
+    
+    snowGround.appendChild(pile);
+}
+
+function initSnowman() {
+    const snowman = document.querySelector('.snowman');
+    let scale = 1;
+    
+    // Grow snowman every minute
+    setInterval(() => {
+        scale += 0.1;
+        snowman.style.transform = `scale(${scale})`;
+        
+        // Add some wobble animation when growing
+        snowman.style.transition = 'transform 1s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+        
+        // Reset transition after growth
+        setTimeout(() => {
+            snowman.style.transition = 'transform 1s ease-in-out';
+        }, 1000);
+    }, 60000); // 60000ms = 1 minute
+}
+
+// Initialize snowman when window loads
+window.addEventListener('load', () => {
+    initSnowman();
+    createSnowflakes();
+});
+
+// Start game when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    new WordSearchGame();
+});

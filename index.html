@@ -2,86 +2,92 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Word Search Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cube Word Search</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="snow-container"></div>
-    <div class="snow-pile"></div>
+    <div class="snow-ground"></div>
+    <div class="snowman">
+        <div class="snowman-body bottom"></div>
+        <div class="snowman-body middle"></div>
+        <div class="snowman-body head">
+            <div class="eyes"></div>
+            <div class="carrot"></div>
+            <div class="smile"></div>
+        </div>
+        <div class="arms">
+            <div class="arm left"></div>
+            <div class="arm right"></div>
+        </div>
+    </div>
+    <div class="alpaca">
+        <div class="alpaca-body">
+            <div class="neck"></div>
+            <div class="head">
+                <div class="ears">
+                    <div class="ear left"></div>
+                    <div class="ear right"></div>
+                </div>
+                <div class="face">
+                    <div class="eyes"></div>
+                    <div class="nose"></div>
+                </div>
+            </div>
+            <div class="legs">
+                <div class="leg front-left"></div>
+                <div class="leg front-right"></div>
+                <div class="leg back-left"></div>
+                <div class="leg back-right"></div>
+            </div>
+            <div class="tail"></div>
+        </div>
+    </div>
     <div class="game-container">
         <div class="header">
-            <div id="userId"></div>
-            <div id="score">Score: 0</div>
-            <div id="timer">Time: 0:00</div>
-            <div class="button-group">
-                <button id="refreshGame" class="action-button">New Game</button>
-                <button id="backToLogin" class="action-button" onclick="backToLogin()">Change Player</button>
-                <button id="endGame" class="action-button">End Game</button>
+            <div class="player-info">
+                <span id="player-name">Player: CW</span>
+                <span>Score: <span id="score">0</span></span>
+                <span>Time: <span id="time">00:00</span></span>
+            </div>
+            <div class="game-controls">
+                <button id="end-game" class="btn">End Game</button>
             </div>
         </div>
-
-        <div class="game-content">
-            <div class="cube-section">
-                <div id="currentFace" class="face-display">Face: 1</div>
-                <div class="scene">
-                    <div class="cube">
-                        <div class="face front" data-face="1">
-                            <div class="grid"></div>
-                        </div>
-                        <div class="face back" data-face="2">
-                            <div class="grid"></div>
-                        </div>
-                        <div class="face right" data-face="3">
-                            <div class="grid"></div>
-                        </div>
-                        <div class="face left" data-face="4">
-                            <div class="grid"></div>
-                        </div>
-                        <div class="face top" data-face="5">
-                            <div class="grid"></div>
-                        </div>
-                        <div class="face bottom" data-face="6">
-                            <div class="grid"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="controls">
-                    <button class="control-btn" data-direction="up">↑</button>
-                    <div class="horizontal-controls">
-                        <button class="control-btn" data-direction="left">←</button>
-                        <button class="control-btn" data-direction="right">→</button>
-                    </div>
-                    <button class="control-btn" data-direction="down">↓</button>
+        
+        <div class="main-content">
+            <div class="cube-controls">
+                <span id="current-face">Face 1</span>
+                <div class="face-buttons">
+                    <button class="face-btn" data-face="1">1</button>
+                    <button class="face-btn" data-face="2">2</button>
+                    <button class="face-btn" data-face="3">3</button>
+                    <button class="face-btn" data-face="4">4</button>
+                    <button class="face-btn" data-face="5">5</button>
+                    <button class="face-btn" data-face="6">6</button>
                 </div>
             </div>
 
-            <div class="word-list-section">
-                <div class="word-list-container">
-                    <h2>Find These Words:</h2>
-                    <div class="word-list-scroll">
-                        <ul id="words"></ul>
+            <div class="game-content">
+                <div class="grid-container">
+                    <div id="letter-grid" class="letter-grid"></div>
+                </div>
+
+                <div class="side-panel">
+                    <div class="word-section">
+                        <h3>Find These Words:</h3>
+                        <div id="word-list" class="word-list"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    <script src="script.js"></script>
     <script>
-        // Check if user is logged in
         window.onload = function() {
-            const userId = localStorage.getItem('userId');
-            if (!userId) {
-                window.location.href = 'login.html';
-                return;
-            }
-            new WordSearchGame();
-        }
-
-        function backToLogin() {
-            localStorage.removeItem('userId');
-            window.location.href = 'login.html';
+            const game = new WordSearchGame();
         }
     </script>
-    <script src="script.js"></script>
 </body>
 </html>
