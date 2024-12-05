@@ -108,20 +108,44 @@ class WordSearchGame {
         // Get current face's words
         const words = this.wordLists[this.currentFace];
         
-        // Place words in grid
-        words.forEach(word => {
+        // Sort words by length (longest first) to ensure better placement
+        const sortedWords = [...words].sort((a, b) => b.length - a.length);
+        
+        // Place words in grid with increased attempts
+        sortedWords.forEach(word => {
             let placed = false;
             let attempts = 0;
-            while (!placed && attempts < 100) {
-                const direction = Math.floor(Math.random() * 8);
-                const row = Math.floor(Math.random() * this.gridSize);
-                const col = Math.floor(Math.random() * this.gridSize);
+            const maxAttempts = 200; // Increased from 100 to 200
+            
+            while (!placed && attempts < maxAttempts) {
+                // Try all directions systematically
+                const directions = [
+                    [0, 1],   // right
+                    [1, 0],   // down
+                    [1, 1],   // diagonal down-right
+                    [-1, 1],  // diagonal up-right
+                    [0, -1],  // left
+                    [-1, 0],  // up
+                    [-1, -1], // diagonal up-left
+                    [1, -1]   // diagonal down-left
+                ];
                 
-                if (this.canPlaceWord(word, row, col, direction)) {
-                    this.placeWord(word, row, col, direction);
-                    placed = true;
+                // Try each direction
+                for (let direction = 0; direction < directions.length && !placed; direction++) {
+                    const row = Math.floor(Math.random() * this.gridSize);
+                    const col = Math.floor(Math.random() * this.gridSize);
+                    
+                    if (this.canPlaceWord(word, row, col, direction)) {
+                        this.placeWord(word, row, col, direction);
+                        placed = true;
+                        break;
+                    }
                 }
                 attempts++;
+            }
+            
+            if (!placed) {
+                console.warn(`Could not place word: ${word}`);
             }
         });
         
