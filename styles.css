@@ -1035,3 +1035,90 @@ body {
         color: var(--text-color);
     }
 }
+
+/* Mobile Responsive Design */
+@media (max-width: 768px) {
+    .game-container {
+        width: 95%;
+        margin: 10px auto;
+        padding: 10px;
+    }
+
+    .header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+
+    .player-info {
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .game-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .game-content {
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .grid-container {
+        min-width: unset;
+        width: 100%;
+        padding: 10px;
+    }
+
+    .letter-grid {
+        gap: 2px;
+        padding: 10px;
+    }
+
+    .grid-cell {
+        font-size: 0.9em;
+        touch-action: none;
+    }
+
+    .side-panel {
+        flex: none;
+        width: 100%;
+        max-height: none;
+    }
+
+    .cube-controls {
+        padding: 20px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .face-buttons {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .face-btn {
+        min-width: 60px;
+    }
+
+    /* Hide decorative elements on mobile */
+    .snow-container,
+    .snow-ground,
+    .snowman,
+    .alpaca {
+        display: none;
+    }
+}
+
+/* Prevent text selection during word search on mobile */
+.grid-cell {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}

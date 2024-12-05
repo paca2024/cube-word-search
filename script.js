@@ -72,8 +72,12 @@ class WordSearchGame {
             });
         });
 
-        // Grid cell selection listeners
+        // Grid cell selection listeners for mouse events
         document.addEventListener('mouseup', () => this.handleMouseUp());
+        
+        // Grid cell selection listeners for touch events
+        document.addEventListener('touchend', () => this.handleMouseUp());
+        document.addEventListener('touchcancel', () => this.handleMouseUp());
         
         // End game button listener
         document.getElementById('end-game').addEventListener('click', () => this.endGame());
@@ -115,10 +119,9 @@ class WordSearchGame {
         sortedWords.forEach(word => {
             let placed = false;
             let attempts = 0;
-            const maxAttempts = 200; // Increased from 100 to 200
+            const maxAttempts = 200;
             
             while (!placed && attempts < maxAttempts) {
-                // Try all directions systematically
                 const directions = [
                     [0, 1],   // right
                     [1, 0],   // down
@@ -130,7 +133,6 @@ class WordSearchGame {
                     [1, -1]   // diagonal down-left
                 ];
                 
-                // Try each direction
                 for (let direction = 0; direction < directions.length && !placed; direction++) {
                     const row = Math.floor(Math.random() * this.gridSize);
                     const col = Math.floor(Math.random() * this.gridSize);
@@ -170,6 +172,25 @@ class WordSearchGame {
                 // Add mouse event listeners
                 cell.addEventListener('mousedown', (e) => this.handleMouseDown(e));
                 cell.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                
+                // Add touch event listeners
+                cell.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                    if (target && target.classList.contains('grid-cell')) {
+                        this.handleMouseDown({ target });
+                    }
+                });
+                
+                cell.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                    if (target && target.classList.contains('grid-cell')) {
+                        this.handleMouseMove({ target });
+                    }
+                });
                 
                 grid.appendChild(cell);
             }
